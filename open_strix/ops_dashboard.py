@@ -66,9 +66,16 @@ def _turn_cost_usd(event: dict[str, Any]) -> float:
 
     LangChain convention: ``input_tokens`` is inclusive of both cache buckets,
     so ``fresh_input = input_tokens - cache_read - cache_creation``.
+
+    Unknown models are priced as Sonnet (the default) and the return value is
+    negated so that unknowns appear as a distinct negative bar in the cost view
+    rather than silently inflating a known-model bucket.  In practice the model
+    field is always set, so this is a safety net, not a common path.
     """
-    model = event.get("model") or "claude-sonnet-4-6"
-    rates = _TOKEN_RATES.get(model, _DEFAULT_TOKEN_RATES)
+    raw_model = (event.get("model") or "").split(":")[-1] or "claude-sonnet-4-6"
+    unknown = raw_model not in _TOKEN_RATES
+    model = raw_model if not unknown else "claude-sonnet-4-6"
+    rates = _TOKEN_RATES[model]
     total_input: int = event.get("input_tokens", 0)
     cache_read: int = event.get("cache_read_input_tokens", 0)
     cache_creation: int = event.get("cache_creation_input_tokens", 0)
@@ -340,7 +347,6 @@ def _compute_cost_stats(
             return job
         return "unknown"
 
-    from collections import defaultdict as _dd
     job_stats: dict[str, dict[str, Any]] = {}
     daily_stats: dict[str, float] = {}
     total_cost = 0.0
@@ -620,7 +626,7 @@ _DASHBOARD_HTML = """<!doctype html>
         </div>
       </section>
 
-            <section id="backlog" class="panel">
+      <section id="backlog" class="panel">
         <p class="hint">Data not yet captured. Each item describes the instrumentation needed.</p>
         <div id="backlog-list"></div>
       </section>
