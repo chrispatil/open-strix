@@ -67,10 +67,9 @@ def _turn_cost_usd(event: dict[str, Any]) -> float:
     LangChain convention: ``input_tokens`` is inclusive of both cache buckets,
     so ``fresh_input = input_tokens - cache_read - cache_creation``.
 
-    Unknown models are priced as Sonnet (the default) and the return value is
-    negated so that unknowns appear as a distinct negative bar in the cost view
-    rather than silently inflating a known-model bucket.  In practice the model
-    field is always set, so this is a safety net, not a common path.
+    Unknown models are priced as Sonnet (the default) rather than silently
+    inflating a known-model bucket.  In practice the model field is always set,
+    so this is a safety net, not a common path.
     """
     raw_model = (event.get("model") or "").split(":")[-1] or "claude-sonnet-4-6"
     unknown = raw_model not in _TOKEN_RATES

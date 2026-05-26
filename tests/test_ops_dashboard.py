@@ -464,8 +464,17 @@ def test_turn_cost_usd_per_job_attribution(tmp_path: Path) -> None:
 
     assert stats is not None
     per_job = {row["job"]: row for row in stats["per_job"]}
-    assert "discord_message" in per_job or any("discord" in k for k in per_job), (
+    assert "discord_message" in per_job, (
         f"Expected discord_message job, got: {list(per_job.keys())}"
+    )
+    assert "rss-daily-scan" in per_job, (
+        f"Expected rss-daily-scan job, got: {list(per_job.keys())}"
+    )
+    assert abs(per_job["discord_message"]["cost_usd"] - 0.5715) < 1e-6, (
+        f'discord_message cost mismatch: {per_job["discord_message"]["cost_usd"]}'
+    )
+    assert abs(per_job["rss-daily-scan"]["cost_usd"] - 0.01) < 1e-6, (
+        f'rss-daily-scan cost mismatch: {per_job["rss-daily-scan"]["cost_usd"]}'
     )
     total = stats["total_cost_usd"]
     assert abs(total - (0.5715 + 0.01)) < 1e-6, f"Total cost mismatch: {total}"
